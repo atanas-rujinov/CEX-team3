@@ -7,12 +7,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@Validated
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
@@ -27,33 +25,32 @@ public class AuthController {
 
     @PostMapping("/editPassword")
     public ResponseEntity<Void> editPass(
-            @AuthenticationPrincipal(expression="username") String username,
+            @RequestParam String username,
             @Valid @RequestBody EditPassRequest rq
     ) {
         authService.editPassword(username, rq.getCurrentPassword(), rq.getNewPassword());
         return ResponseEntity.ok().build();
     }
 
-    @Data
-    public static class LoginRequest {
-        @NotBlank
-        private String username;
+    @PostMapping(value = "/users/{id}/uploadDocument", consumes = "multipart/form-data")
+    public ResponseEntity<Void> uploadDocument(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file
+    ) throws Exception {
+        authService.uploadDocument(id, file);
+        return ResponseEntity.ok().build();
+    }
 
-        @NotBlank
-        private String password;
+    @Data static class LoginRequest {
+        @NotBlank private String username;
+        @NotBlank private String password;
     }
 
     @Data @AllArgsConstructor
-    public static class JwtResponse {
-        private String token;
-    }
+    static class JwtResponse { private String token; }
 
-    @Data
-    public static class EditPassRequest {
-        @NotBlank
-        private String currentPassword;
-
-        @NotBlank
-        private String newPassword;
+    @Data static class EditPassRequest {
+        @NotBlank private String currentPassword;
+        @NotBlank private String newPassword;
     }
 }
