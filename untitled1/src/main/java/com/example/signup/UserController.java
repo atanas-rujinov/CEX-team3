@@ -3,6 +3,9 @@ package com.example.signup;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,6 +16,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -23,17 +28,43 @@ public class UserController {
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final Path fileStorageLocation;
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Autowired
-    public UserController(UserRepository userRepository) {
+    public UserController(UserRepository userRepository, 
+                        AuthenticationManager authenticationManager,
+                        JwtTokenProvider jwtTokenProvider) {
         this.passwordEncoder = new BCryptPasswordEncoder();
         this.userRepository = userRepository;
+        this.authenticationManager = authenticationManager;
+        this.jwtTokenProvider = jwtTokenProvider;
         this.fileStorageLocation = Paths.get("uploads/documents").toAbsolutePath().normalize();
         
         try {
             Files.createDirectories(this.fileStorageLocation);
         } catch (IOException ex) {
             throw new RuntimeException("Could not create the directory where the uploaded files will be stored.", ex);
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestParam("email") String email,
+                                 @RequestParam("password") String password) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(email, password)
+            );
+
+            String token = jwtTokenProvider.generateToken(email);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", token);
+            response.put("email", email);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Invalid email or password");
         }
     }
 
@@ -92,7 +123,15 @@ public class UserController {
 
             userRepository.save(user);
 
-            return ResponseEntity.ok("User registered successfully");
+            // Generate JWT token for the new user
+            String token = jwtTokenProvider.generateToken(email);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "User registered successfully");
+            response.put("token", token);
+            response.put("email", email);
+
+            return ResponseEntity.ok(response);
         } catch (IOException ex) {
             return ResponseEntity.internalServerError().body("Could not process document photo: " + ex.getMessage());
         } catch (Exception ex) {
