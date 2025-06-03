@@ -1,5 +1,7 @@
 package com.example.auth.web;
 
+import com.example.auth.domain.User;
+import com.example.auth.repository.UserRepository;
 import com.example.auth.service.AuthService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -7,13 +9,17 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
 public class AuthController {
+
     private final AuthService authService;
+    private final UserRepository userRepo;
 
     @PostMapping("/login")
     public ResponseEntity<JwtResponse> login(
@@ -41,15 +47,28 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
-    @Data static class LoginRequest {
+    @GetMapping("/userId")
+    public ResponseEntity<Long> getUserId(
+            @AuthenticationPrincipal(expression = "username") String username
+    ) {
+        User u = userRepo.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return ResponseEntity.ok(u.getId());
+    }
+
+    @Data
+    static class LoginRequest {
         @NotBlank private String username;
         @NotBlank private String password;
     }
 
     @Data @AllArgsConstructor
-    static class JwtResponse { private String token; }
+    static class JwtResponse {
+        private String token;
+    }
 
-    @Data static class EditPassRequest {
+    @Data
+    static class EditPassRequest {
         @NotBlank private String currentPassword;
         @NotBlank private String newPassword;
     }
