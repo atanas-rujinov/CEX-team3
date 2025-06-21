@@ -42,10 +42,12 @@ public class BalanceController {
         }
 
         List<Map<String, Object>> response = balances.stream()
-                .map(balance -> Map.of(
-                    "currency", balance.getCurrencyType(),
-                    "amount", balance.getAmount()
-                ))
+                .map(balance -> {
+                    Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("currency", balance.getCurrencyType());
+                    map.put("amount", balance.getAmount());
+                    return map;
+                })
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
@@ -60,10 +62,10 @@ public class BalanceController {
             Balance balance = balanceRepository.findByUserIdAndCurrencyType(user.getId(), currencyType)
                     .orElseGet(() -> new Balance(user, currencyType));
 
-            return ResponseEntity.ok(Map.of(
-                "currency", balance.getCurrencyType(),
-                "amount", balance.getAmount()
-            ));
+            Map<String, Object> map = new java.util.HashMap<>();
+            map.put("currency", balance.getCurrencyType());
+            map.put("amount", balance.getAmount());
+            return ResponseEntity.ok(map);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Invalid currency type");
         }
@@ -87,11 +89,11 @@ public class BalanceController {
             balance.setAmount(balance.getAmount().add(amount));
             balanceRepository.save(balance);
 
-            return ResponseEntity.ok(Map.of(
-                "currency", balance.getCurrencyType(),
-                "amount", balance.getAmount(),
-                "message", "Deposit successful"
-            ));
+            Map<String, Object> map = new java.util.HashMap<>();
+            map.put("currency", balance.getCurrencyType());
+            map.put("amount", balance.getAmount());
+            map.put("message", "Deposit successful");
+            return ResponseEntity.ok(map);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Invalid currency type");
         }
@@ -119,11 +121,11 @@ public class BalanceController {
             balance.setAmount(balance.getAmount().subtract(amount));
             balanceRepository.save(balance);
 
-            return ResponseEntity.ok(Map.of(
-                "currency", balance.getCurrencyType(),
-                "amount", balance.getAmount(),
-                "message", "Withdrawal successful"
-            ));
+            Map<String, Object> map = new java.util.HashMap<>();
+            map.put("currency", balance.getCurrencyType());
+            map.put("amount", balance.getAmount());
+            map.put("message", "Withdrawal successful");
+            return ResponseEntity.ok(map);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Invalid currency type");
         }
