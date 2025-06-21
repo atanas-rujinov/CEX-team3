@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,6 +21,25 @@ public class AuthController {
 
     private final AuthService authService;
     private final UserRepository userRepo;
+    private final PasswordEncoder passwordEncoder;
+
+    @PostMapping("/register")
+    public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest rq) {
+        if (userRepo.findByUsername(rq.getUsername()).isPresent()) {
+            throw new IllegalArgumentException("Username already exists");
+        }
+        
+        User user = User.builder()
+                .username(rq.getUsername())
+                .passwordHash(passwordEncoder.encode(rq.getPassword()))
+                .firstName(rq.getFirstName())
+                .lastName(rq.getLastName())
+                .email(rq.getEmail())
+                .build();
+        
+        userRepo.save(user);
+        return ResponseEntity.ok().build();
+    }
 
     @PostMapping("/login")
     public ResponseEntity<JwtResponse> login(
@@ -54,6 +74,20 @@ public class AuthController {
         User u = userRepo.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         return ResponseEntity.ok(u.getId());
+    }
+
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("Auth Service is running!");
+    }
+
+    @Data
+    static class RegisterRequest {
+        @NotBlank private String username;
+        @NotBlank private String password;
+        @NotBlank private String firstName;
+        @NotBlank private String lastName;
+        private String email;
     }
 
     @Data
