@@ -97,11 +97,6 @@ public class AuthenticationService {
                     return new ResourceNotFoundException("User not found with email: " + request.getEmail());
                 });
         
-        if (user.isBanned()) {
-            logger.warn("Authentication failed for email {}: Account is banned", request.getEmail());
-            throw new BadRequestException("Account is banned");
-        }
-
         String jwtToken = jwtService.generateToken(user);
         logger.info("Successfully authenticated user with email: {}", request.getEmail());
         
