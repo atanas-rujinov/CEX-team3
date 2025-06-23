@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
@@ -22,64 +23,84 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public boolean deleteAccount(String username, String password) {
-        logger.info("Attempting to delete account for username: {}", username);
-        
-        User user = userRepository.findByUsername(username)
+    public boolean deleteAccount(String email, String password) {
+        logger.info("Attempting to delete account for email: {}", email);
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> {
-                    logger.error("Delete account failed: User not found with username: {}", username);
-                    return new ResourceNotFoundException("User not found with username: " + username);
+                    logger.error("Delete account failed: User not found with email: {}", email);
+                    return new ResourceNotFoundException("User not found with email: " + email);
                 });
-
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            logger.warn("Delete account failed for username {}: Invalid password", username);
+            logger.warn("Delete account failed for email {}: Invalid password", email);
             throw new UnauthorizedException("Invalid password");
         }
-
         userRepository.delete(user);
-        logger.info("Successfully deleted account for username: {}", username);
+        logger.info("Successfully deleted account for email: {}", email);
         return true;
     }
 
     @Override
-    public boolean editUsername(String currentUsername, String newUsername) {
-        logger.info("Attempting to edit username from {} to {}", currentUsername, newUsername);
-        
-        User user = userRepository.findByUsername(currentUsername)
+    public boolean editUsername(String email, String newFirstName, String newLastName) {
+        logger.info("Attempting to edit name for email: {}", email);
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> {
-                    logger.error("Edit username failed: User not found with username: {}", currentUsername);
-                    return new ResourceNotFoundException("User not found with username: " + currentUsername);
+                    logger.error("Edit name failed: User not found with email: {}", email);
+                    return new ResourceNotFoundException("User not found with email: " + email);
                 });
-
-        if (userRepository.findByUsername(newUsername).isPresent()) {
-            logger.warn("Edit username failed: Username {} already taken", newUsername);
-            throw new BadRequestException("Username already taken");
-        }
-
-        user.setUsername(newUsername);
+        user.setFirstName(newFirstName);
+        user.setLastName(newLastName);
         userRepository.save(user);
-        logger.info("Successfully updated username from {} to {}", currentUsername, newUsername);
+        logger.info("Successfully updated name for email: {}", email);
         return true;
     }
 
     @Override
-    public boolean banAccount(String username) {
-        logger.info("Attempting to ban account for username: {}", username);
-        
-        User user = userRepository.findByUsername(username)
+    public boolean editPassword(String email, String currentPassword, String newPassword) {
+        logger.info("Attempting to edit password for email: {}", email);
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> {
-                    logger.error("Ban account failed: User not found with username: {}", username);
-                    return new ResourceNotFoundException("User not found with username: " + username);
+                    logger.error("Edit password failed: User not found with email: {}", email);
+                    return new ResourceNotFoundException("User not found with email: " + email);
                 });
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            logger.warn("Edit password failed for email {}: Invalid current password", email);
+            throw new UnauthorizedException("Invalid current password");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        logger.info("Successfully updated password for email: {}", email);
+        return true;
+    }
 
+    @Override
+    public boolean banAccount(String email) {
+        logger.info("Attempting to ban account for email: {}", email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    logger.error("Ban account failed: User not found with email: {}", email);
+                    return new ResourceNotFoundException("User not found with email: " + email);
+                });
         if (user.isBanned()) {
-            logger.warn("Ban account failed: User {} is already banned", username);
+            logger.warn("Ban account failed: User {} is already banned", email);
             throw new BadRequestException("User is already banned");
         }
-
         user.setBanned(true);
         userRepository.save(user);
-        logger.info("Successfully banned account for username: {}", username);
+        logger.info("Successfully banned account for email: {}", email);
+        return true;
+    }
+
+    @Override
+    public boolean updateBalance(String email, BigDecimal newBalance) {
+        logger.info("Attempting to update balance for email: {}", email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    logger.error("Update balance failed: User not found with email: {}", email);
+                    return new ResourceNotFoundException("User not found with email: " + email);
+                });
+        user.setBalance(newBalance);
+        userRepository.save(user);
+        logger.info("Successfully updated balance for email: {}", email);
         return true;
     }
 } 

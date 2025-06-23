@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class EditUsernameRequest {
-    private String currentUsername;
-    private String newUsername;
+    private String email;
+    private String newFirstName;
+    private String newLastName;
 } 

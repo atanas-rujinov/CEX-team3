@@ -37,11 +37,11 @@ public class AuthenticationService {
         }
 
         var user = User.builder()
-                .firstname(request.getFirstname())
-                .lastname(request.getLastname())
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.USER)
+                .role("USER")
                 .build();
         userRepository.save(user);
         logger.info("Successfully registered new user with email: {}", request.getEmail());
@@ -61,11 +61,11 @@ public class AuthenticationService {
         }
 
         var user = User.builder()
-                .firstname(request.getFirstname())
-                .lastname(request.getLastname())
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.ADMIN)
+                .role("ADMIN")
                 .build();
         userRepository.save(user);
         logger.info("Successfully registered new admin with email: {}", request.getEmail());
